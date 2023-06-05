@@ -1,9 +1,9 @@
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
+from sqlalchemy import text
 from db import db
 from User import User
 import pymysql
-
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +14,7 @@ pymysql.install_as_MySQLdb()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
 
 db.init_app(app)
+
 
 @app.route("/")
 @cross_origin()
@@ -32,19 +33,53 @@ def register():
     username = data['username']
     password = data['password']
 
+    if not email:
+        return {"response": "email cannot be empty"}, 400
+    if not username:
+        return {"response": "username cannot be empty"}, 400
+    if not password:
+        return {"response": "password cannot be empty"}, 400
+
     existing_email_user = User.query.filter_by(email=email).first()
     if existing_email_user:
-        return {"response": "this email is already taken"}
+        return {"response": "this email is already taken"}, 400
 
     existing_username_user = User.query.filter_by(username=username).first()
     if existing_username_user:
-        return {"response": "this username is already taken"}
+        return {"response": "this username is already taken"}, 400
 
     new_user = User(email=email, username=username, password=password)
     db.session.add(new_user)
     db.session.commit()
 
     return {"response": "Registration Completed. User created successfully"}
+
+
+@app.route("/login", methods=['POST'])
+@cross_origin()
+def login():
+    data = request.get_json()
+    print(data)
+
+    email = data['email']
+    password = data['password']
+
+    user_exists = User.query.filter_by(email=email).first()
+    if not user_exists:
+        return {"response": "User doesn't exist"}, 400
+
+    query = text("""
+       SELECT password
+       FROM socialize.users
+       WHERE email = :email
+       """)
+    result = db.session.execute(query, {"email": email})
+    password_from_query = result.fetchone()[0] if result.rowcount > 0 else None
+    print(password_from_query)
+
+    if password == password_from_query:
+        return {"response": "logging in successful I guess"}
+    return {"response": "Wrong password"}, 400
 
 
 if __name__ == "__main__":
