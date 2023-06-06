@@ -1,4 +1,3 @@
-from flask_sqlalchemy import SQLAlchemy
 from db import db
 
 
@@ -14,7 +13,7 @@ class User(db.Model):
     description = db.Column(db.String(255))
     profile_picture = db.Column(db.String(255))
 
-    def __init__(self, email, username, password,is_admin=False, description=None,profile_picture=None):
+    def __init__(self, email, username, password, is_admin=False, description=None, profile_picture=None):
         self.email = email
         self.username = username
         self.password = password

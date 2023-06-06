@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from sqlalchemy import text
 from db import db
@@ -14,14 +14,6 @@ pymysql.install_as_MySQLdb()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
 
 db.init_app(app)
-
-
-@app.route("/")
-@cross_origin()
-def index():
-    return {
-        "Status": "True"
-    }
 
 
 @app.route("/register", methods=['POST'])
@@ -59,7 +51,7 @@ def register():
 @cross_origin()
 def login():
     data = request.get_json()
-    print(data)
+
 
     email = data['email']
     password = data['password']
@@ -75,10 +67,17 @@ def login():
        """)
     result = db.session.execute(query, {"email": email})
     password_from_query = result.fetchone()[0] if result.rowcount > 0 else None
-    print(password_from_query)
 
     if password == password_from_query:
-        return {"response": "logging in successful I guess"}
+        query = text("""
+           SELECT username
+           FROM socialize.users
+           WHERE email = :email
+           """)
+        result = db.session.execute(query, {"email": email})
+        username = result.fetchone()[0] if result.rowcount > 0 else None
+        print({"response": "logging in successful I guess", "username": username})
+        return jsonify({"response": "logging in successful I guess", "username": username}), 200
     return {"response": "Wrong password"}, 400
 
 
