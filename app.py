@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 from sqlalchemy import text
 from db import db
 from User import User
+from Message import Message
 import pymysql
 
 app = Flask(__name__)
@@ -84,11 +85,26 @@ def login():
                    """)
         result = db.session.execute(query, {"email": email})
         is_admin = result.fetchone()[0] if result.rowcount > 0 else None
+        is_admin = True if is_admin == 1 else False if is_admin == 0 else None
 
         print({"response": "logging in successful I guess", "username": username, "isAdmin": is_admin})
         return jsonify({"response": "logging in successful I guess", "username": username, "isAdmin": is_admin}), 200
 
     return {"response": "Wrong password"}, 400
+
+
+@app.route("/api/getmessages", methods=['GET'])
+@cross_origin()
+def get_messages():
+    messages = Message.query.order_by(Message.date.asc()).all()
+    result = []
+    for message in messages:
+        result.append({
+            'user': message.user.username,
+            'text': message.text,
+            'date': message.date
+        })
+    return jsonify(result)
 
 
 @app.route("/api/username/<string:username>", methods=['GET'])
