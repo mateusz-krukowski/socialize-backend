@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from sqlalchemy import text
@@ -99,18 +101,31 @@ def get_messages():
     messages = Message.query.order_by(Message.date.asc()).all()
     result = []
     for message in messages:
+        date_str = message.date.strftime('%a, %d %b %Y %H:%M:%S')
+        formatted_date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S').strftime('%d/%m/%Y %H:%M:%S')
         result.append({
             'user': message.user.username,
             'text': message.text,
-            'date': message.date
+            'date': formatted_date
         })
+    print(result)
     return jsonify(result)
 
 
-@app.route("/api/username/<string:username>", methods=['GET'])
+@app.route("/api/sendmessage", methods=["POST"])
 @cross_origin()
-def api_username(username):
-    return 200
+def send_message():
+    data = request.get_json()
+    username = data.get('user')
+    text = data.get('text')
+    date_str = data.get('date')
+    user = User.query.filter_by(username=username).first()
+    new_message = Message(user_id=user.id, text=text, date=datetime.strptime(date_str, '%d/%m/%Y %H:%M:%S'))
+    db.session.add(new_message)
+    db.session.commit()
+    print(data)
+    return "Message sent correctly", 200
+
 
 
 if __name__ == "__main__":
