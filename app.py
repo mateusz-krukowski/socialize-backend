@@ -52,7 +52,6 @@ def register():
 def login():
     data = request.get_json()
 
-
     email = data['email']
     password = data['password']
 
@@ -74,11 +73,28 @@ def login():
            FROM socialize.users
            WHERE email = :email
            """)
+
         result = db.session.execute(query, {"email": email})
         username = result.fetchone()[0] if result.rowcount > 0 else None
-        print({"response": "logging in successful I guess", "username": username})
-        return jsonify({"response": "logging in successful I guess", "username": username}), 200
+
+        query = text("""
+                   SELECT is_admin
+                   FROM socialize.users
+                   WHERE email = :email
+                   """)
+        result = db.session.execute(query, {"email": email})
+        is_admin = result.fetchone()[0] if result.rowcount > 0 else None
+
+        print({"response": "logging in successful I guess", "username": username, "isAdmin": is_admin})
+        return jsonify({"response": "logging in successful I guess", "username": username, "isAdmin": is_admin}), 200
+
     return {"response": "Wrong password"}, 400
+
+
+@app.route("/api/username/<string:username>", methods=['GET'])
+@cross_origin()
+def api_username(username):
+    return 200
 
 
 if __name__ == "__main__":
