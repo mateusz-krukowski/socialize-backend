@@ -1,9 +1,8 @@
-import logging
 from datetime import datetime
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from sqlalchemy import text, select
+from sqlalchemy import text
 from db import db
 from User import User
 from Message import Message
@@ -15,19 +14,9 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 pymysql.install_as_MySQLdb()
 
 # Konfiguracja połączenia z bazą danych MySQL
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://mateuszkrukowski:password2137@db4free.net/socialize'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://mateuszkrukowski:password2137@db4free.net/socialize'
 
 db.init_app(app)
-
-logger = logging.getLogger('waitress')
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
-
-
-@app.route("/", methods=["GET"])
-def index():
-    return "API is working"
 
 
 @app.route("/register", methods=['POST'])
@@ -138,38 +127,8 @@ def send_message():
     return "Message sent correctly", 200
 
 
-@app.route("/api/getusers", methods=["GET"])
-@cross_origin()
-def get_users():
-    users_list = User.query.all()
-    result = []
-    for user in users_list:
-        result.append({
-            'id': user.id,
-            'username': user.username,
-            'email': user.email
-        })
-    print(result)
-    return jsonify(result), 200
-
-
-@app.route("/api/createuser", methods=["POST"])
-@cross_origin()
-def create_user():
-    data = request.get_json()
-    # todo create user xd
-    return 200
-
-
-@app.route("/api/deleteuser", methods=["DELETE"])
-@cross_origin()
-def delete_user():
-    return 200
-
-
-
 
 if __name__ == "__main__":
     from waitress import serve
 
-    serve(app, host="127.0.0.1", port=5000)
+    serve(app, host="0.0.0.0", port=8080)
