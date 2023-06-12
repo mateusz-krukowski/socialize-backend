@@ -15,8 +15,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 pymysql.install_as_MySQLdb()
 
 # Konfiguracja połączenia z bazą danych MySQL
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://mateuszkrukowski:password2137@db4free.net/socialize'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://mateuszkrukowski:password2137@db4free.net/socialize'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
 
 db.init_app(app)
 
