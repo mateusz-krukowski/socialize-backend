@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 from sqlalchemy import text, select
 from db import db
@@ -16,7 +16,7 @@ pymysql.install_as_MySQLdb()
 
 # Konfiguracja połączenia z bazą danych MySQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://mateuszkrukowski:password2137@db4free.net/socialize'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/socialize'
 
 db.init_app(app)
 
@@ -147,26 +147,80 @@ def get_users():
         result.append({
             'id': user.id,
             'username': user.username,
-            'email': user.email
+            'email': user.email,
+            'password': user.password,
+            'is_admin': bool(user.is_admin)
         })
-    print(result)
+    # print(result)
     return jsonify(result), 200
 
 
-@app.route("/api/createuser", methods=["POST"])
+@app.route("/api/edituser", methods=["POST"])
 @cross_origin()
-def create_user():
-    data = request.get_json()
-    # todo create user xd
-    return 200
+def edit_user():
+    user_data = request.get_json()
+    user_id = user_data.get('id')
+    print(request.get_json())
+    try:
+        user = User.query.get(user_id)
+        if user:
+            user.username = user_data.get('username')
+            user.email = user_data.get('email')
+            user.is_admin = user_data.get('is_admin')
+            user.password = user_data.get('password')
+            db.session.commit()
+            return jsonify({'message': 'User data updated successfully'})
+        else:
+            new_user = User(
+
+                username=user_data.get('username'),
+                email=user_data.get('email'),
+                is_admin=user_data.get('is_admin'),
+                password=user_data.get('password')
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            return jsonify({'message': 'New user created successfully'})
+
+    except Exception as e:
+        return jsonify({'message': 'Error occurred while updating user data', 'error': str(e)})
 
 
-@app.route("/api/deleteuser", methods=["DELETE"])
+@app.route("/api/deleteuser", methods=["DELETE", "POST"])
 @cross_origin()
 def delete_user():
+    user_id = request.get_json()
+    print(user_id)
+    if user_id == 1:
+        return jsonify({'message': 'This user cannot be deleted'})
+
+    try:
+        user = User.query.get(user_id)
+        # Usuń powiązane rekordy z tabeli messages
+        db.session.query(Message).filter_by(user_id=user_id).delete()
+        if user:
+            db.session.delete(user)
+            db.session.commit()
+            query = text("""ALTER TABLE socialize.users AUTO_INCREMENT = 1;""")
+            db.session.execute(query)
+            db.session.commit()
+            return jsonify({'message': 'User deleted successfully'})
+        else:
+            return jsonify({'message': 'User not found'})
+    except Exception as e:
+        return jsonify({'message': 'Error occurred while deleting user', 'error': str(e)})
     return 200
 
 
+@app.route('/api/showservertime', methods=['GET'])
+@cross_origin()
+def show_server_time():
+    def generate_server_time():
+        while True:
+            time = datetime.now().strftime("%H:%M:%S")
+            yield f"data: {time}\n\n"
+
+    return Response(generate_server_time(), mimetype='text/event-stream')
 
 
 if __name__ == "__main__":
